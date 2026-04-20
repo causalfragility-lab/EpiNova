@@ -1,0 +1,192 @@
+---
+title: "EpiNova: Getting Started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{EpiNova: Getting Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo    = TRUE,
+  fig.width  = 8,
+  fig.height = 4,
+  message = FALSE,
+  warning = FALSE
+)
+library(EpiNova)
+library(ggplot2)
+```
+
+# Why EpiNova?
+
+| Feature | eSIR | EpiNova |
+|---|---|---|
+| Compartmental models | SIR only | SIR, SEIR, SEIRD, SVEIR, SVEIRD, age-SEIR |
+| pi(t) shape | Step / exponential | Step, exponential, spline, GP, composite |
+| Inference | JAGS (external binary) | MLE, SMC (pure R); HMC via Stan (optional) |
+| Rt estimation | No | Built-in; EpiEstim wrapper (optional) |
+| Spatial structure | None | Multi-patch + gravity mobility |
+| Scenario comparison | No | plot_scenarios() |
+| Forecast scoring | No | CRPS, coverage, MAE |
+
+---
+
+## Data
+
+We use the Hubei Province COVID-19 data from January to February 2020.
+
+```{r data}
+NI_complete <- c(41, 41, 41, 45, 62, 131, 200, 270, 375, 444, 549,
+                 729, 1052, 1423, 2714, 3554, 4903, 5806, 7153, 9074,
+                 11177, 13522, 16678, 19665, 22112, 24953, 27100,
+                 29631, 31728, 33366)
+RI_complete <- c(1, 1, 7, 10, 14, 20, 25, 31, 34, 45, 55, 71, 94,
+                 121, 152, 213, 252, 345, 417, 561, 650, 811, 1017,
+                 1261, 1485, 1917, 2260, 2725, 3284, 3754)
+N  <- 58.5e6
+Y  <- NI_complete / N - RI_complete / N
+R  <- RI_complete / N
+```
+
+---
+
+## 1. SEIRD model with a smooth spline intervention
+
+```{r seird_spline}
+pi_spline <- build_pi_spline(
+  knot_times  = c(0, 10, 22, 30, 60, 120),
+  knot_values = c(1, 0.95, 0.60, 0.35, 0.25, 0.25)
+)
+
+params <- list(beta  = 0.35, gamma = 0.07, sigma = 0.20,
+               delta = 0.005, I0 = Y[1],  E0 = Y[1] * 2)
+
+init  <- c(S = 1 - params$E0 - params$I0,
+           E = params$E0, I = params$I0, R = R[1], D = 0)
+times <- 0:200
+
+traj <- solve_model(params, init, times,
+                    model = "SEIRD", pi_fn = pi_spline)
+
+plot_trajectory(traj, obs_Y = Y, obs_R = R,
+                T_obs_end = length(Y) - 1,
+                title = "SEIRD + Spline pi(t) - Hubei Province")
+```
+
+---
+
+## 2. Scenario comparison
+
+```{r scenarios}
+pi_none   <- function(t) 1
+pi_mild   <- build_pi_step(c(10), c(1, 0.6))
+pi_strict <- build_pi_spline(c(0, 10, 22, 60), c(1, 0.9, 0.25, 0.35))
+
+scenario_pis <- list(
+  "No intervention" = pi_none,
+  "Mild lockdown"   = pi_mild,
+  "Strict lockdown" = pi_strict
+)
+
+sc_df <- do.call(rbind, lapply(names(scenario_pis), function(nm) {
+  tr <- solve_model(params, init, times,
+                    model = "SEIRD", pi_fn = scenario_pis[[nm]])
+  data.frame(
+    time     = tr$time,
+    I_median = tr$I,
+    I_lower  = tr$I * 0.75,
+    I_upper  = tr$I * 1.25,
+    scenario = nm
+  )
+}))
+
+plot_scenarios(sc_df, obs_Y = Y)
+```
+
+---
+
+## 3. Built-in Rt estimation (no extra packages needed)
+
+```{r rt}
+new_cases <- pmax(0L, diff(NI_complete))
+Rt_df     <- estimate_Rt_simple(new_cases, mean_si = 5.2,
+                                 sd_si = 2.8, window = 7L)
+plot_Rt(Rt_df, change_times = c(10, 22))
+```
+
+---
+
+## 4. Composite NPI functions
+
+```{r composite}
+lockdown <- build_pi_step(c(10, 60), c(1.0, 0.4, 0.65))
+masks    <- build_pi_spline(c(0, 15, 30, 90), c(1, 0.92, 0.80, 0.80))
+combined <- compose_pi(lockdown, masks)
+
+traj_combined <- solve_model(params, init, times,
+                              model = "SEIRD", pi_fn = combined)
+
+plot_trajectory(traj_combined, obs_Y = Y, obs_R = R,
+                T_obs_end = length(Y) - 1,
+                title = "Composite NPI: lockdown x mask mandate")
+```
+
+---
+
+## 5. Two-patch spatial model
+
+```{r multipatch, fig.height = 5}
+M <- gravity_mobility(
+  N_vec    = c(58.5e6, 1.4e9 - 58.5e6),
+  dist_mat = matrix(c(0, 1000, 1000, 0), nrow = 2),
+  kappa    = 1e-7,
+  max_travel = 0.02
+)
+
+ode_fn <- build_multipatch_SEIR(
+  n_patches  = 2,
+  M          = M,
+  beta_vec   = c(0.35, 0.25),
+  gamma_vec  = c(0.07, 0.07),
+  sigma_vec  = c(0.20, 0.20),
+  pi_fn_list = list(pi_spline, build_pi_step(c(15), c(1, 0.5)))
+)
+
+init_mat <- matrix(
+  c(1 - 1e-4, 1 - 1e-5, 1e-5, 5e-6, 1e-4, 1e-5, 0, 0),
+  nrow = 2
+)
+
+mp_df <- solve_multipatch(ode_fn, init_mat,
+                           times = 0:150, n_patches = 2)
+
+plot_multipatch_snapshot(mp_df, t_snapshot = 30,
+                          patch_names = c("Hubei", "Rest of China"))
+```
+
+---
+
+## 6. Forecast scoring
+
+```{r scoring}
+holdout <- Y[20:30]
+fc_df   <- data.frame(
+  time     = 19:29,
+  I_median = traj$I[20:30],
+  I_lower  = traj$I[20:30] * 0.60,
+  I_upper  = traj$I[20:30] * 1.40
+)
+score_forecast(fc_df, holdout)
+```
+
+---
+
+## Package philosophy
+
+EpiNova is built on three principles absent from eSIR:
+
+1. **Composability** - interventions, models, and inference backends are independent building blocks.
+2. **Modularity** - no mandatory external binaries; optional packages unlock extra capabilities.
+3. **Calibration accountability** - every forecast can be scored with `score_forecast()`.

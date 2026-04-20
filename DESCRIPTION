@@ -1,0 +1,43 @@
+Package: EpiNova
+Title: Flexible Extended State-Space Epidemiological Models with Modern Inference
+Version: 0.1.0
+Authors@R: 
+    person("Your", "Name", email = "you@example.com", role = c("aut", "cre"))
+Description: 
+    An extended epidemiological modeling framework that goes beyond the classical SIR 
+    model. EpiNova supports SEIR, SEIRD, SVEIRD, and age-stratified compartmental 
+    models with flexible intervention functions (spline-based, Gaussian process, or 
+    user-defined). Inference is available via maximum likelihood or sequential Monte 
+    Carlo (particle filtering). Includes real-time effective reproduction number (Rt) 
+    estimation, spatial/network-aware multi-patch models, and ensemble forecasting 
+    with proper uncertainty quantification.
+License: CC BY 4.0
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 4.0.0)
+Imports:
+    deSolve,
+    ggplot2,
+    dplyr,
+    tidyr,
+    splines,
+    scales
+Suggests:
+    DEoptim,
+    MASS,
+    numDeriv,
+    rstan,
+    cmdstanr,
+    TMB,
+    EpiEstim,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    ggpubr,
+    patchwork
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/causalfragility-lab/EpiNova
+BugReports: https://github.com/causalfragility-lab/EpiNova/issues
