@@ -1,8 +1,11 @@
-# EpiNova <img src="man/figures/logo.png" align="right" height="120"/>
+# EpiNova <img src="man/figures/logo.png" align="right" height="120" alt=""/>
 
 **Flexible Extended State-Space Epidemiological Models with Modern Inference**
 
-[![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CRAN status](https://www.r-pkg.org/badges/version/EpiNova)](https://CRAN.R-project.org/package=EpiNova)
+[![R CMD Check](https://img.shields.io/badge/R%20CMD%20Check-passing-brightgreen)](https://github.com/causalfragility-lab/EpiNova)
+[![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)](https://github.com/causalfragility-lab/EpiNova)
 
 ---
 
@@ -15,19 +18,89 @@ limitations** and designed `EpiNova` as a ground-up redesign.
 
 ---
 
+## Installation
+
+```r
+# Install from GitHub
+devtools::install_github("causalfragility-lab/EpiNova")
+
+# Core dependencies (installed automatically)
+# deSolve, ggplot2, dplyr, tidyr, splines, scales
+
+# Optional — unlock extra capabilities
+install.packages("DEoptim")   # faster global optimisation in fit_mle()
+install.packages("EpiEstim")  # full Bayesian Rt estimation
+install.packages("MASS")      # parametric bootstrap uncertainty
+install.packages("numDeriv")  # Hessian-based confidence intervals
+install.packages("cmdstanr")  # HMC backend (Stan)
+```
+
+No JAGS binary required. Core functionality is pure R.
+
+---
+
+## Quick Start
+
+```r
+library(EpiNova)
+
+# --- Built-in Hubei COVID-19 data ---
+props <- prep_proportions(hubei_covid)   # Y = active infected, R = removed
+
+# --- Smooth spline intervention ---
+pi_fn <- build_pi_spline(
+  knot_times  = c(0, 10, 22, 60),
+  knot_values = c(1, 0.9, 0.4, 0.25)
+)
+
+# --- Solve SEIRD ODE ---
+traj <- solve_model(
+  params = list(beta = 0.35, gamma = 0.07, sigma = 0.2, delta = 0.005),
+  init   = c(S = 0.9999, E = 0.00005, I = 0.00005, R = 0, D = 0),
+  times  = 0:200,
+  model  = "SEIRD",
+  pi_fn  = pi_fn
+)
+plot_trajectory(traj, obs_Y = props$Y, obs_R = props$R, T_obs_end = 29)
+
+# --- Scenario comparison ---
+sc <- do.call(rbind, lapply(
+  list("No NPI"   = function(t) 1,
+       "Lockdown" = build_pi_step(c(10), c(1, 0.4)),
+       "Spline"   = pi_fn),
+  function(pi) {
+    tr <- solve_model(
+      list(beta=0.35, gamma=0.07, sigma=0.2, delta=0.005),
+      c(S=0.9999, E=5e-5, I=5e-5, R=0, D=0), 0:200, "SEIRD", pi_fn=pi)
+    data.frame(time=tr$time, I_median=tr$I,
+               I_lower=tr$I*0.8, I_upper=tr$I*1.2, scenario=deparse(substitute(pi)))
+  }
+))
+plot_scenarios(sc)
+
+# --- Real-time Rt estimation (no extra packages) ---
+new_cases <- pmax(0L, diff(hubei_covid$NI))
+Rt_df     <- estimate_Rt_simple(new_cases, mean_si = 5.2, window = 7L)
+plot_Rt(Rt_df, change_times = c(10, 22))
+```
+
+---
+
 ## Key New Ideas vs eSIR
 
-### 🧬 Compartmental Model Hierarchy (Idea 1–3)
+### 🧬 Compartmental Model Hierarchy (Ideas 1–3)
+
 ```
 eSIR:    S → I → R  (only)
 
-EpiNova: S → I → R                           (SIR)
-         S → E → I → R                       (SEIR)
-         S → E → I → R / D                   (SEIRD)
-         S ⇄ V → E → I → R                   (SVEIR)
-         S ⇄ V → E → I → R / D               (SVEIRD) ← waning immunity
-         [S,E,I,R] × n_age groups + contact matrix  (age-SEIR)
+EpiNova: S → I → R                                    (SIR)
+         S → E → I → R                                (SEIR)
+         S → E → I → R / D                            (SEIRD)
+         S ⇄ V → E → I → R                            (SVEIR)
+         S ⇄ V → E → I → R / D   ← waning immunity    (SVEIRD)
+         [S,E,I,R] × n_age groups + contact matrix     (age-SEIR)
 ```
+
 All models share the same `solve_model(model = "SVEIRD")` interface.
 
 ---
@@ -48,45 +121,47 @@ All models share the same `solve_model(model = "SVEIRD")` interface.
 ### ⚡ Modern Inference Backends (Ideas 8–10)
 
 ```r
-# Option A: Fast MLE (no external binary needed)
+# Fast MLE — no external binary needed
 fit <- fit_mle(Y, R, N, model = "SEIRD",
-               par_init = list(beta=0.3, gamma=0.1, ...))
+               par_init = list(beta=0.3, gamma=0.1, sigma=0.2,
+                               delta=0.003, I0=1e-4, E0=2e-4))
 
-# Option B: Full Bayesian via Stan/HMC
-fit <- fit_hmc(Y, R, N, model = "SEIRD",   # uses cmdstanr
-               prior_list = list(beta = c(0.3, 0.1), ...))
-
-# Option C: Real-time Sequential Monte Carlo
+# Real-time Sequential Monte Carlo
 fit <- fit_smc(Y, R, N, model = "SEIR",
-               prior_fn = my_prior,
-               n_particles = 2000)
+               prior_fn = my_prior, n_particles = 2000)
 
-# Option D: Rt estimation (EpiEstim integration)
-Rt  <- estimate_Rt(new_cases, mean_si = 5.2, sd_si = 2.8)
+# Dependency-free Rt estimation
+Rt <- estimate_Rt_simple(new_cases, mean_si = 5.2, window = 7L)
+
+# Full Bayesian Rt via EpiEstim (when installed)
+Rt <- estimate_Rt(new_cases, mean_si = 5.2, sd_si = 2.8)
 ```
 
 **Why it matters:**
-- MLE via `nlminb` + `DEoptim` global search: **10-100× faster** than JAGS MCMC
-- HMC mixes dramatically faster than Gibbs for continuous parameters
-- SMC enables **real-time daily updating** without re-running the full chain
-- No JAGS binary install required for MLE and SMC paths
+- MLE via `DEoptim` + `nlminb`: **10–100× faster** than JAGS MCMC
+- SMC enables **real-time daily updating** — impossible with JAGS
+- No JAGS, no rjags, no external binary for core paths
 
 ---
 
 ### 🗺️ Multi-Patch Spatial Models (Ideas 11–12)
 
 ```r
-# Build mobility matrix from geography (gravity model)
+# Build mobility matrix from geography
 M <- gravity_mobility(N_vec, dist_mat, kappa = 1e-7)
 
-# Couple n patches with different beta, intervention
+# Couple n patches with per-patch parameters and interventions
 ode <- build_multipatch_SEIR(
-  n_patches  = 5,
+  n_patches  = 3,
   M          = M,
-  beta_vec   = c(0.35, 0.28, 0.22, 0.20, 0.18),
-  pi_fn_list = list(lockdown_A, lockdown_B, no_npi, no_npi, no_npi)
+  beta_vec   = c(0.35, 0.28, 0.22),
+  pi_fn_list = list(strict_lockdown, mild_lockdown, function(t) 1)
 )
+mp_df <- solve_multipatch(ode, init_mat, times = 0:150, n_patches = 3)
+plot_multipatch_snapshot(mp_df, t_snapshot = 30,
+                          patch_names = c("Hubei", "Guangdong", "Beijing"))
 ```
+
 eSIR had **zero** spatial structure.
 
 ---
@@ -96,17 +171,17 @@ eSIR had **zero** spatial structure.
 ```r
 # BMA across model types
 ens <- ensemble_forecast(Y, R, N,
-         models    = c("SEIR","SEIRD","SVEIRD"),
+         models    = c("SEIR", "SEIRD", "SVEIRD"),
          par_inits = list(...), par_bounds = list(...))
 
-# "What-if" scenarios
+# "What-if" scenario projection
 sc <- project_scenarios(fit, scenarios = list(
-  "No intervention"    = function(t) 1,
-  "Light lockdown"     = build_pi_step(c(10), c(1, 0.6)),
-  "Strict lockdown"    = build_pi_spline(c(0,10,20), c(1,0.8,0.2))
+  "No intervention" = function(t) 1,
+  "Light lockdown"  = build_pi_step(c(10), c(1, 0.6)),
+  "Strict lockdown" = build_pi_spline(c(0,10,20,60), c(1,0.8,0.2,0.2))
 ))
 
-# Score your forecasts
+# Score your forecasts with proper scoring rules
 score_forecast(ens$ensemble_forecast, actual_Y = Y_holdout)
 # Returns: CRPS, 95% coverage, MAE
 ```
@@ -116,86 +191,32 @@ score_forecast(ens$ensemble_forecast, actual_Y = Y_holdout)
 ### 📊 Rich Visualisations (Idea 16)
 
 ```r
-plot_trajectory(traj, obs_Y = Y, obs_R = R)   # all compartments
-plot_forecast(forecast_df, obs_Y = Y)          # ribbon plot
-plot_scenarios(sc_df)                          # scenario comparison
-plot_Rt(Rt_df, change_times = c(10, 22))       # Rt with interventions
-plot_multipatch_snapshot(mp_df, t = 30)        # spatial bar chart
+plot_trajectory(traj, obs_Y = Y, obs_R = R, T_obs_end = 29)
+plot_forecast(forecast_df, obs_Y = Y)
+plot_scenarios(sc_df)
+plot_Rt(Rt_df, change_times = c(10, 22))
+plot_multipatch_snapshot(mp_df, t_snapshot = 30)
 ```
 
 ---
 
-## Installation
-
-```r
-# Install dependencies
-install.packages(c("deSolve","ggplot2","dplyr","tidyr","splines"))
-
-# Optional but recommended
-install.packages("DEoptim")        # global optimisation
-install.packages("EpiEstim")       # Rt estimation
-install.packages("cmdstanr")       # HMC backend
-
-# Install EpiNova
-devtools::install_github("yourname/EpiNova")
-```
-
-No JAGS, no rjags, no external binary required for core functionality.
-
----
-
-## Quick Start
-
-```r
-library(EpiNova)
-
-# 1. Define a smooth intervention
-pi_fn <- build_pi_spline(
-  knot_times  = c(0, 10, 22, 60),
-  knot_values = c(1, 0.9, 0.4, 0.25)
-)
-
-# 2. Solve SEIRD ODE
-traj <- solve_model(
-  params = list(beta=0.35, gamma=0.07, sigma=0.2, delta=0.005),
-  init   = c(S=0.9999, E=0.00005, I=0.00005, R=0, D=0),
-  times  = 0:200,
-  model  = "SEIRD",
-  pi_fn  = pi_fn
-)
-
-# 3. Fit to data
-fit <- fit_mle(obs_Y, obs_R, N = 58.5e6,
-               model    = "SEIRD",
-               par_init = list(beta=0.3, gamma=0.08, sigma=0.15,
-                               delta=0.003, I0=1e-4, E0=2e-4))
-
-# 4. Compare intervention scenarios
-sc <- project_scenarios(fit, scenarios = list(
-  "Baseline"    = pi_fn,
-  "Relaxed"     = build_pi_step(c(10), c(1, 0.6)),
-  "Counterfactual (no NPI)" = function(t) 1
-))
-
-plot_scenarios(sc, obs_Y = obs_Y)
-```
-
----
-
-## Architecture
+## Package Architecture
 
 ```
 EpiNova/
 ├── R/
-│   ├── 01_ode_models.R          # solve_model() dispatcher + ODE systems
+│   ├── 01_ode_models.R          # solve_model() dispatcher + all ODE systems
 │   ├── 02_intervention_functions.R  # build_pi_*(), compose_pi(), build_phi_pulse()
-│   ├── 03_inference.R           # fit_mle(), fit_smc(), estimate_Rt()
+│   ├── 03_inference.R           # fit_mle(), fit_smc(), estimate_Rt*()
 │   ├── 04_multipatch.R          # build_multipatch_SEIR(), gravity_mobility()
 │   ├── 05_ensemble.R            # ensemble_forecast(), project_scenarios(), score_forecast()
-│   └── 06_plotting.R            # plot_trajectory(), plot_forecast(), plot_scenarios(), plot_Rt()
-├── inst/stan/                   # Stan model files for HMC backend
+│   ├── 06_plotting.R            # all plot_*() functions
+│   └── 07_data.R                # hubei_covid dataset + prep_proportions()
+├── tests/testthat/              # 76 unit tests (6 files)
 ├── vignettes/
 │   └── getting_started.Rmd
+├── data-raw/
+│   └── hubei_covid.R
 └── DESCRIPTION
 ```
 
@@ -208,3 +229,18 @@ EpiNova/
 - Cori et al. (2013). A new framework for Rt estimation. *Am. J. Epidemiol.*
 - Kristensen et al. (2016). TMB: Automatic differentiation and Laplace approximation. *J. Stat. Softw.*
 - Gneiting & Raftery (2007). Strictly proper scoring rules, prediction, and estimation. *JASA.*
+
+---
+
+## Citation
+
+```bibtex
+@Manual{EpiNova2025,
+  title  = {EpiNova: Flexible Extended State-Space Epidemiological Models
+             with Modern Inference},
+  author = {Hait, Subir},
+  year   = {2025},
+  note   = {R package version 0.1.0},
+  url    = {https://github.com/causalfragility-lab/EpiNova}
+}
+```

@@ -2,22 +2,21 @@
 
 0 errors | 0 warnings | 1 note
 
-  New submission
+  checking for future file timestamps: unable to verify current time
 
-  Suggests or Enhances not in mainstream repositories: cmdstanr
+This note is caused by a local network/firewall issue preventing R from
+reaching the IANA time server. It does not appear on win-builder, R-hub,
+or CRAN servers and is unrelated to the package itself.
 
-This note is expected for a new submission. cmdstanr has been removed
-from Suggests in response. All remaining Suggests packages are on CRAN.
+## win-builder (R-devel) previous run fixed issues
+
+- LaTeX Unicode errors (pi, phi, lambda): fixed, replaced with ASCII
+- cran-comments.md in tarball: fixed via .Rbuildignore
+- Spell-check acronyms (SEIR, SEIRD, SVEIRD, EpiNova): added inst/WORDLIST
 
 ## Test suite
 
 76 tests, 0 failures (testthat 3.x).
-
-## Platforms tested
-
-- Windows 11 x64, R 4.5.1 (local, --as-cran)
-- win-builder R-devel (pending)
-- R-hub Ubuntu/macOS (pending)
 
 ## New submission
 

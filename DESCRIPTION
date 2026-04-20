@@ -1,24 +1,27 @@
 Package: EpiNova
 Title: Flexible Extended State-Space Epidemiological Models with Modern Inference
 Version: 0.1.0
-Authors@R: 
+Authors@R:
     person("Subir", "Hait",
            email = "haitsubi@msu.edu",
-           role = c("aut", "cre"),
+           role  = c("aut", "cre"),
            comment = c(ORCID = "0009-0004-9871-9677"))
-Description: 
-    An extended epidemiological modeling framework that goes beyond the classical SIR 
-    model. EpiNova supports SEIR, SEIRD, SVEIRD, and age-stratified compartmental 
-    models with flexible intervention functions (spline-based, Gaussian process, or 
-    user-defined). Inference is available via maximum likelihood or sequential Monte 
-    Carlo (particle filtering). Includes real-time effective reproduction number (Rt) 
-    estimation, spatial/network-aware multi-patch models, and ensemble forecasting 
-    with proper uncertainty quantification.
-License: CC BY 4.0
+Description:
+    An extended epidemiological modelling framework that goes beyond the
+    classical SIR model. Supports SEIR, SEIRD, SVEIRD, and age-stratified
+    compartmental models with flexible intervention functions (spline-based,
+    Gaussian process, or user-defined). Inference is available via maximum
+    likelihood or sequential Monte Carlo (particle filtering) with no
+    external binary dependencies. Includes a dependency-free real-time
+    effective reproduction number (Rt) estimator, spatial multi-patch
+    models with gravity-model mobility, ensemble forecasting via Bayesian
+    model averaging, and proper scoring rules (CRPS, coverage, MAE) for
+    forecast evaluation.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-Depends: 
+Depends:
     R (>= 4.0.0)
 Imports:
     deSolve,
@@ -32,6 +35,7 @@ Suggests:
     MASS,
     numDeriv,
     rstan,
+    cmdstanr,
     TMB,
     EpiEstim,
     knitr,

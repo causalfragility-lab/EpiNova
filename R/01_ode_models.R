@@ -39,10 +39,10 @@ NULL
 #'   compartment, plus a column \code{time}.
 #'
 #' @examples
-#' p <- list(beta = 0.3, gamma = 0.1, sigma = 0.2,
-#'           delta = 0.005, vax_rate = 0.002, wane = 0.01, ve = 0.85)
+#' p  <- list(beta = 0.3, gamma = 0.1, sigma = 0.2,
+#'            delta = 0.005, vax_rate = 0.002, wane = 0.01, ve = 0.85)
 #' y0 <- c(S = 0.990, E = 0.005, I = 0.004, R = 0.001, D = 0, V = 0)
-#' t  <- seq(0, 200, by = 1)
+#' t  <- seq(0, 30, by = 1)
 #' result <- solve_model(p, y0, t, model = "SVEIRD")
 #'
 #' @export

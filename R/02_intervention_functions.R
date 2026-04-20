@@ -13,13 +13,13 @@
 NULL
 
 # ============================================================
-# IDEA 4: Spline-based π(t)
+# IDEA 4: Spline-based pi(t)
 #   Fits a monotone or unconstrained natural cubic spline through
 #   user-supplied control knots.  Far more realistic than a step
 #   function for policies that are phased in/out gradually.
 # ============================================================
 
-#' Build a natural cubic spline π(t)
+#' Build a natural cubic spline pi(t)
 #'
 #' @param knot_times  Numeric vector of days (knot positions).
 #' @param knot_values Numeric vector of pi values at each knot,
@@ -56,13 +56,13 @@ build_pi_spline <- function(knot_times, knot_values,
 
 
 # ============================================================
-# IDEA 5: Gaussian Process (GP) prior on π(t) – for Bayesian fitting
+# IDEA 5: Gaussian Process (GP) prior on pi(t) – for Bayesian fitting
 #   Instead of fixing the shape, we let the data inform it via a GP.
 #   This is used internally by the Stan fitting module.
 #   Exposed here as a covariance builder for transparency.
 # ============================================================
 
-#' Build a squared-exponential covariance matrix for GP π(t)
+#' Build a squared-exponential covariance matrix for GP pi(t)
 #'
 #' Used to construct the GP prior over transmission modifiers at
 #' a discrete set of time points before passing to the Stan sampler.
@@ -83,10 +83,10 @@ gp_cov_sqexp <- function(times, l = 14, sigma = 0.3) {
 
 # ============================================================
 # IDEA 6: Composite intervention – multiplicative combination
-#   of multiple π functions (e.g., mask mandate × lockdown).
+#   of multiple pi functions (e.g., mask mandate x lockdown).
 # ============================================================
 
-#' Compose multiple π(t) functions multiplicatively
+#' Compose multiple pi(t) functions multiplicatively
 #'
 #' Each component function represents an independent non-pharmaceutical
 #' intervention (NPI).  Their effects are assumed multiplicative on
@@ -110,7 +110,7 @@ compose_pi <- function(...) {
 }
 
 
-#' Build a step-function π(t)  (reproduces eSIR Model 1 behaviour)
+#' Build a step-function pi(t)  (reproduces eSIR Model 1 behaviour)
 #'
 #' @param change_times Numeric vector of change-point days.
 #' @param pi_values    Numeric vector of length
@@ -127,7 +127,7 @@ build_pi_step <- function(change_times, pi_values) {
 }
 
 
-#' Build an exponential decay π(t) = exp(−λ t)
+#' Build an exponential decay pi(t) = exp(-lambda t)
 #'
 #' @param lambda Decay rate (positive scalar).
 #' @param t0     Start of decay (default 0).
@@ -139,13 +139,13 @@ build_pi_exp <- function(lambda, t0 = 0) {
 
 
 # ============================================================
-# IDEA 7: φ(t) as a smooth Gaussian pulse instead of Dirac delta
+# IDEA 7: phi(t) as a smooth Gaussian pulse instead of Dirac delta
 #   eSIR's quarantine jumps were hard discrete steps.
 #   A Gaussian pulse gives continuous differentiability for
 #   gradient-based samplers (HMC in Stan).
 # ============================================================
 
-#' Build a smooth quarantine pulse φ(t)
+#' Build a smooth quarantine pulse phi(t)
 #'
 #' Approximates a Dirac delta at each change point with a narrow
 #' Gaussian pulse.  The area under each pulse equals the quarantine

@@ -97,7 +97,7 @@ ensemble_forecast <- function(obs_Y, obs_R, N,
 #' Project scenarios under alternative intervention strategies
 #'
 #' @param fit        A fitted model object (\code{EpiNova_mle}).
-#' @param scenarios  Named list of π(t) functions, one per scenario.
+#' @param scenarios  Named list of pi(t) functions, one per scenario.
 #' @param T_forecast Integer forecast horizon in days.
 #' @param n_sim      Simulation draws for uncertainty.
 #'

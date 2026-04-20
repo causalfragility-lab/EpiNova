@@ -1,0 +1,8 @@
+bibentry(
+  bibtype  = "Manual",
+  title    = "EpiNova: Flexible Extended State-Space Epidemiological Models with Modern Inference",
+  author   = person("Subir", "Hait"),
+  year     = "2025",
+  note     = "R package version 0.1.0",
+  url      = "https://github.com/causalfragility-lab/EpiNova"
+)

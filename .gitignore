@@ -1,0 +1,19 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Package build artifacts
+/doc/
+/Meta/
+/inst/doc/
+man/*.Rd
+NAMESPACE
+*.tar.gz
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db

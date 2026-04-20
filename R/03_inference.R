@@ -298,8 +298,8 @@ estimate_Rt <- function(incidence, mean_si = 5.2, sd_si = 2.8,
 #' @return Data frame with columns \code{t_end}, \code{Rt_mean},
 #'   \code{Rt_lower}, \code{Rt_upper}.
 #' @examples
-#' incidence <- c(1,1,2,3,5,8,13,21,18,14,10,7,5,3,2,1)
-#' Rt_df <- estimate_Rt_simple(incidence)
+#' incidence <- c(1,1,2,4,6,8,13,21,18,14,10,7,5,3,2,1)
+#' Rt_df <- estimate_Rt_simple(incidence, n_boot = 50L)
 #' @export
 estimate_Rt_simple <- function(incidence, mean_si = 5.2, sd_si = 2.8,
                                 window = 7L, n_boot = 500L) {

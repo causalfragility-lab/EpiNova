@@ -19,13 +19,13 @@ NULL
 #' Build a mobility-coupled multi-patch SEIR ODE system
 #'
 #' @param n_patches    Integer number of patches.
-#' @param M            n_patches × n_patches mobility matrix.
+#' @param M            n_patches x n_patches mobility matrix.
 #'   \code{M[i,j]} is the daily fraction of population in patch i
 #'   that travels to patch j (rows sum to <= 1).
 #' @param beta_vec     Length-n_patches vector of transmission rates.
 #' @param gamma_vec    Length-n_patches vector of recovery rates.
 #' @param sigma_vec    Length-n_patches vector of incubation rates.
-#' @param pi_fn_list   List of n_patches π(t) functions (one per patch).
+#' @param pi_fn_list   List of n_patches pi(t) functions (one per patch).
 #'   Use \code{NULL} for no intervention in that patch.
 #' @param N_vec        Population sizes for each patch.
 #'
@@ -69,7 +69,7 @@ build_multipatch_SEIR <- function(n_patches, M,
 #' Solve a multi-patch SEIR model
 #'
 #' @param ode_fn   ODE function from \code{build_multipatch_SEIR}.
-#' @param init_mat n_patches × 4 matrix of initial conditions
+#' @param init_mat n_patches x 4 matrix of initial conditions
 #'   (columns: S, E, I, R).
 #' @param times    Time points.
 #' @param n_patches Number of patches.
@@ -108,13 +108,13 @@ solve_multipatch <- function(ode_fn, init_mat, times, n_patches) {
 #' normalised so that each row sums to at most \code{max_travel}.
 #'
 #' @param N_vec      Length-n population sizes.
-#' @param dist_mat   n × n symmetric matrix of pairwise distances.
+#' @param dist_mat   n x n symmetric matrix of pairwise distances.
 #' @param kappa      Proportionality constant.
 #' @param alpha,beta Population exponents (default 1).
 #' @param grav_gamma Distance decay exponent (default 2).
 #' @param max_travel Maximum daily travel fraction per patch (0–1).
 #'
-#' @return A row-normalised n × n mobility matrix.
+#' @return A row-normalised n x n mobility matrix.
 #' @export
 gravity_mobility <- function(N_vec, dist_mat,
                               kappa = 1e-5,
