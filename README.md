@@ -239,7 +239,7 @@ EpiNova/
   title  = {EpiNova: Flexible Extended State-Space Epidemiological Models
              with Modern Inference},
   author = {Hait, Subir},
-  year   = {2025},
+  year   = {2026},
   note   = {R package version 0.1.0},
   url    = {https://github.com/causalfragility-lab/EpiNova}
 }
