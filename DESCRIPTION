@@ -35,7 +35,6 @@ Suggests:
     MASS,
     numDeriv,
     rstan,
-    cmdstanr,
     TMB,
     EpiEstim,
     knitr,
