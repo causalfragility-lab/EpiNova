@@ -2,7 +2,10 @@ Package: EpiNova
 Title: Flexible Extended State-Space Epidemiological Models with Modern Inference
 Version: 0.1.0
 Authors@R: 
-    person("Your", "Name", email = "you@example.com", role = c("aut", "cre"))
+    person("Subir", "Hait",
+           email = "haitsubi@msu.edu",
+           role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0004-9871-9677"))
 Description: 
     An extended epidemiological modeling framework that goes beyond the classical SIR 
     model. EpiNova supports SEIR, SEIRD, SVEIRD, and age-stratified compartmental 
@@ -29,7 +32,6 @@ Suggests:
     MASS,
     numDeriv,
     rstan,
-    cmdstanr,
     TMB,
     EpiEstim,
     knitr,
