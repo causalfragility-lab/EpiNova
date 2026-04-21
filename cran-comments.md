@@ -1,23 +1,17 @@
+## Resubmission
+This is a resubmission. Changes made in response to CRAN reviewer feedback:
+
+* Expanded all acronyms in DESCRIPTION: SIR, SEIR, SEIRD, SVEIRD, SMC, BMA, CRPS, MAE
+* Added four verified references in CRAN-compliant format (doi:/ISBN:)
+
 ## R CMD check results
-
-0 errors | 0 warnings | 1 note
-
-  checking for future file timestamps: unable to verify current time
-
-This note is caused by a local network/firewall issue preventing R from
-reaching the IANA time server. It does not appear on win-builder, R-hub,
-or CRAN servers and is unrelated to the package itself.
-
-## win-builder (R-devel) previous run fixed issues
-
-- LaTeX Unicode errors (pi, phi, lambda): fixed, replaced with ASCII
-- cran-comments.md in tarball: fixed via .Rbuildignore
-- Spell-check acronyms (SEIR, SEIRD, SVEIRD, EpiNova): added inst/WORDLIST
+0 errors | 0 warnings | 0 notes
 
 ## Test suite
+76 tests, 0 failures (testthat 3.x)
 
-76 tests, 0 failures (testthat 3.x).
+## win-builder (R-devel)
+0 errors | 0 warnings | 0 notes
 
 ## New submission
-
 No downstream dependencies.
