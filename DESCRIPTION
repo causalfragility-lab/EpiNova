@@ -8,15 +8,23 @@ Authors@R:
            comment = c(ORCID = "0009-0004-9871-9677"))
 Description:
     An extended epidemiological modelling framework that goes beyond the
-    classical SIR model. Supports SEIR, SEIRD, SVEIRD, and age-stratified
-    compartmental models with flexible intervention functions (spline-based,
-    Gaussian process, or user-defined). Inference is available via maximum
-    likelihood or sequential Monte Carlo (particle filtering) with no
-    external binary dependencies. Includes a dependency-free real-time
-    effective reproduction number (Rt) estimator, spatial multi-patch
-    models with gravity-model mobility, ensemble forecasting via Bayesian
-    model averaging, and proper scoring rules (CRPS, coverage, MAE) for
-    forecast evaluation.
+    classical SIR (Susceptible-Infectious-Recovered) model. Supports
+    SEIR (Susceptible-Exposed-Infectious-Recovered),
+    SEIRD (Susceptible-Exposed-Infectious-Recovered-Deceased),
+    SVEIRD (Susceptible-Vaccinated-Exposed-Infectious-Recovered-Deceased),
+    and age-stratified compartmental models with flexible intervention
+    functions (spline-based, Gaussian process, or user-defined). Inference
+    is available via maximum likelihood or sequential Monte Carlo (SMC,
+    also known as particle filtering) with no external binary dependencies.
+    Includes a dependency-free real-time effective reproduction number (Rt)
+    estimator, spatial multi-patch models with gravity-model mobility,
+    ensemble forecasting via Bayesian model averaging (BMA), and proper
+    scoring rules including CRPS (Continuous Ranked Probability Score),
+    coverage, and MAE (Mean Absolute Error) for forecast evaluation.
+    Methods follow Anderson and May (1991, ISBN:9780198545996),
+    Doucet, de Freitas, and Gordon (2001) <doi:10.1007/978-1-4757-3437-9>,
+    Cori et al. (2013) <doi:10.1093/aje/kwt133>,
+    and Gneiting and Raftery (2007) <doi:10.1198/016214506000001437>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
